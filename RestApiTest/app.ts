@@ -1,31 +1,33 @@
 import * as express from 'express';
-import PostsController from './Controllers/MainController';
+import MainController from './Controllers/MainController';
+import { MongoHelper as MongoHelper1 } from "./Workers/MongoHelper";
 import { Connector } from "./Workers/connector";
 var bodyParser = require('body-parser')
 
 class App {
     public app: express.Application;
     public port: number;
-
-    constructor(controllers, port) {
+    public router: express.Router;
+    public Maincontroller: MainController;;
+    constructor(port, _router) {
         this.app = express();
         this.port = port;
+        this.router = _router;
         this.initMidleWare();
-        this.initializeControllers(controllers);
-    }
+        this.Maincontroller = new MainController(this.router);
+        this.initRouter();
 
-    private initMidleWare() {
+    }
+    private initRouter() {
+        this.app.use('/', this.router);
+    }
+    private async initMidleWare() {
         this.app.use(bodyParser.urlencoded({ extended: false }));
         this.app.use(bodyParser.json());
     }
-    private initializeControllers(controllers) {
-        controllers.forEach((controller) => {
-            this.app.use('/', controller.router);
-        });
-    }
 
-    public listen() {
-        this.app.listen(this.port, () => {
+    public async listen() {
+        this.app.listen(this.port, async () => {
             console.log(`App listening on the port ${this.port}`);
         });
     }

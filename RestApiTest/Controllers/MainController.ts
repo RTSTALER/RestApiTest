@@ -6,54 +6,56 @@ import { Token } from "../Models/TokenModel";
 var ping = require('ping');
 const host = "google.com";
 
+
 export class MainController {
-    public router = express.Router();
-    _connector = new Connector();
-    constructor() {
-        this.intializeRoutes();
+   
+
+    constructor(router) {
+        this.intializeRoutes(router);
+        Connector.connect("mongodb+srv://root:<12345>@cluster0-gc9nu.gcp.mongodb.net/test?retryWrites=true&w=majority");
     }
-    
-    public intializeRoutes() {
-        this.router.post("/singin", this.Signin);
-        this.router.post("/signup", this.Signup);
-        this.router.get("/info", this.Info);
-        this.router.get("/latency", this.Latency);
-        this.router.get("/logout:all", this.Logout);
+
+    public async intializeRoutes(router) {
+        router.post("/singin", this.Signin);
+        router.post("/signup", this.Signup);
+        router.get("/info", this.Info);
+        router.get("/latency", this.Latency);
+        router.get("/logout:all", this.Logout);
     }
 
     Signin(request: express.Request, response: express.Response): void {
         let user = JsonHelpers.JsonReg2User(request.body);
-        if (this._connector.LogIn(user)) {
-            let token = this._connector.CreateToken(user.login);
+        if (Connector.LogIn(user)) {
+            let token = Connector.CreateToken(user.login);
             response.cookie('Token', token, { expires: new Date(Date.now() + 600000) });
         }
     }
     Signup(request: express.Request, response: express.Response): void {
         let user = JsonHelpers.JsonReg2User(request.body);
-        if (!this._connector.AddUser(user)) {
-            let token = this._connector.CreateToken(user.login);
+        if (!Connector.AddUser(user)) {
+            let token = Connector.CreateToken(user.login);
             response.cookie('Token', token, { expires: new Date(Date.now() + 600000) });
         }
     }
     Info(request: express.Request, response: express.Response): void {
-        if (this._connector.AuthValidate(request.cookies.Token as string)) {
-            response.send({ login: this._connector.GetTokenInfo(request.cookies.Token as string).Owner});
+        if (Connector.AuthValidate(request.cookies.Token as string)) {
+            response.send({ login: Connector.GetTokenInfo(request.cookies.Token as string).Owner });
         }
     }
     Latency(request: express.Request, response: express.Response): void {
-        if (this._connector.AuthValidate(request.cookies.Token as string)) {
+        if (Connector.AuthValidate(request.cookies.Token as string)) {
             ping.sys.probe(host, function (isAlive) {
                 var msg = isAlive ? 'host ' + host + ' is alive' : 'host ' + host + ' is dead';
                 response.send({ ping: msg });
             });
         }
-      
+
     }
 
     Logout(request: express.Request, response: express.Response, next: express.NextFunction): void {
-        if (this._connector.AuthValidate(request.cookies.Token as string)) {
-            this._connector.DeleteUserToken(JsonHelpers.Url2QueryParams(request.baseUrl),
-                this._connector.GetTokenInfo(request.cookies.Token as string));
+        if (Connector.AuthValidate(request.cookies.Token as string)) {
+            Connector.DeleteUserToken(JsonHelpers.Url2QueryParams(request.baseUrl),
+                Connector.GetTokenInfo(request.cookies.Token as string));
         }
     }
 }

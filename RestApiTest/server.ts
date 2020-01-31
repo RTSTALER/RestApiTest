@@ -1,12 +1,15 @@
 import App from './app';
+import { MongoHelper } from "./Workers/MongoHelper";
 import MainController from './Controllers/MainController';
-import { Connector } from "./Workers/connector";
+import e = require('express');
+
+
+
+let router = e.Router();
 
 const app = new App(
-    [
-        new MainController(),
-    ],
-    1337
+    1337,
+    router
 );
-
 app.listen();
+
