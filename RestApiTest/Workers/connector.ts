@@ -2,15 +2,13 @@ import { DbUser } from "../Models/UserModel";
 import { Token } from "../Models/TokenModel";
 import { MongoHelper } from "./MongoHelper";
 import * as mongo from 'mongodb';
-const mongo = require('mongodb').MongoClient;
 
-let tokens;
-let users;
 const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator();
 
 export class Connector {
     constructor() {
+        this.Connect = this.Connect.bind(this);
         this.AddUser = this.AddUser.bind(this);
         this.CreateToken = this.CreateToken.bind(this);
         this.DeleteUserToken = this.DeleteUserToken.bind(this);
@@ -21,99 +19,105 @@ export class Connector {
         this.GetTokenInfo = this.GetTokenInfo.bind(this);
     }
 
-    public connect(url: string): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            mongo.MongoClient.connect(url, { useNewUrlParser: true }, (err, client: mongo.MongoClient) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    this.client = client;
-                    resolve(client);
-                    tokens = client.db('db_users').collection('tokens');
-                    users = client.db('db_users').collection('users');
-                }
-            });
-        });
-    }
-    public client: mongo.MongoClient;
-    public  tokens;
-    public users;
+     public Connect(url: string): Promise<any> {
+         return new Promise<any>((resolve, reject) => {
+             const mongo = require('mongodb').MongoClient;
+             mongo.connect(url, { useUnifiedTopology: true }, (err, client: mongo.MongoClient) => {
+                 if (err) {
+                     console.log("ERROR -" + err)
+                     reject(err);
+                 } else {
+                     Connector.client = client;
+                     Connector.users = client.db('db_users').collection('users');
+                     Connector.tokens = client.db('db_tokens').collection('tokens');
+                     console.log("Connected to MongoDB")
+                     resolve(client);
+                 }
+             });
+         });
+     }
 
-    public AddUser(_user: DbUser): boolean {
-        if (!this.RepeatedUser(_user)) {
-            users.insertOne(_user,
-                    (err, result) => {
-                        if (err) {
-                            console.log('Unable insert user: ', err);
-                            throw err;
-                        }
-                    });
-                return true;
-            }
-            else {
-                return false;
-            }
-    }
-    public CreateToken(_owner: string): string {
+    public static client: mongo.MongoClient;
+    public static tokens;
+    public static users;
 
-            let tmpToken = tokgen.generate();
-            this.tokens.insertOne(new Token(tmpToken, _owner),
+    public async AddUser(_user: DbUser): Promise<boolean> {
+        var repeated = await this.RepeatedUser(_user)
+        if (!repeated) {
+            Connector.users.insertOne(_user,
                 (err, result) => {
                     if (err) {
-                        console.log('Unable insert token: ', err);
+                        console.log('Unable insert user: ', err);
                         throw err;
                     }
                 });
-            return tmpToken;
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    public CreateToken(_owner: string): string {
+
+        let tmpToken = tokgen.generate();
+        Connector.tokens.insertOne(new Token(tmpToken, _owner),
+            (err, result) => {
+                if (err) {
+                    console.log('Unable insert token: ', err);
+                    throw err;
+                }
+            });
+        return tmpToken;
     }
 
     public DeleteUserToken(all: boolean, _token: Token) {
-        
-            if (all)
-                this.tokens.deleteMany({ owner: _token.Owner },
-                    (err, result) => {
-                        if (err) {
-                            console.log('Unable delete user: ', err)
-                            throw err
-                        }
-                    });
-            else
-                this.tokens.deleteOne({ token: _token.token },
-                    (err, result) => {
-                        if (err) {
-                            console.log('Unable delete user: ', err)
-                            throw err
-                        }
-                    });
+
+        if (all)
+            Connector.tokens.deleteMany({ Owner: _token.Owner },
+                (err, result) => {
+                    if (err) {
+                        console.log('Unable delete user: ', err)
+                        throw err
+                    }
+                });
+        else
+            Connector.tokens.deleteOne({ token: _token.token },
+                (err, result) => {
+                    if (err) {
+                        console.log('Unable delete user: ', err)
+                        throw err
+                    }
+                });
     }
 
-    public RepeatedUser(_user: DbUser): boolean {
-        
-        let result = users.find({ _login: _user.login }).findOne();
-            return result;
+    public async RepeatedUser(_user: DbUser): Promise<boolean> {
+
+        let result = await Connector.users.findOne({ login: _user.login });
+        return result !== null;
     }
 
-    public FindUser(_user: DbUser): any {
-      
-        let result = this.users.find({ _login: _user.login }).findOne();
-            return result;
-    }
+    public async FindUser(_user: DbUser): Promise<any> {
 
-    public AuthValidate(_token: string): boolean {
-
-        let result = this.tokens.findOne({ token: _token });
-            return result;
-        }
-
-    public LogIn(_user: DbUser): boolean {
-        let result = this.tokens.findOne({ _login: _user.login, _password: _user._password });
+        let result = await Connector.users.findOne({ login: _user.login });
         return result;
     }
 
-    public GetTokenInfo(_token: string): Token {
-        let result = this.tokens.findOne({ token: _token }) as Token;
+    public async AuthValidate(_token: string): Promise<boolean> {
+
+        let result = await Connector.tokens.findOne({ token: _token });
         return result;
-        }
+    }
+
+    public async LogIn(_user: DbUser): Promise<boolean> {
+        let result = await Connector.users.findOne({ login: _user.login, _password: _user._password });
+        return result !== null;
+    }
+
+    public async GetTokenInfo(_token: string): Promise<Token> {
+
+        let result = await Connector.tokens.findOne({ token: _token });
+        return result;
+    }
 }
 
 export default new Connector();

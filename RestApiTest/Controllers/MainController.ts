@@ -8,54 +8,98 @@ const host = "google.com";
 
 
 export class MainController {
-   
+
 
     constructor(router) {
         this.intializeRoutes(router);
-        Connector.connect("mongodb+srv://root:<12345>@cluster0-gc9nu.gcp.mongodb.net/test?retryWrites=true&w=majority");
     }
 
     public async intializeRoutes(router) {
-        router.post("/singin", this.Signin);
+        router.post("/signin", this.Signin);
         router.post("/signup", this.Signup);
         router.get("/info", this.Info);
         router.get("/latency", this.Latency);
-        router.get("/logout:all", this.Logout);
+        router.get("/logout", this.Logout);
     }
 
-    Signin(request: express.Request, response: express.Response): void {
+    public static parseCookies(request): any {
+        var list = {},
+            rc = request.headers.cookie;
+
+        rc && rc.split(';').forEach(function (cookie) {
+            var parts = cookie.split('=');
+            list[parts.shift().trim()] = decodeURI(parts.join('='));
+        });
+
+        return list;
+    }
+
+    async Signin(request: express.Request, response: express.Response): Promise<void> {
         let user = JsonHelpers.JsonReg2User(request.body);
-        if (Connector.LogIn(user)) {
+        if (await Connector.LogIn(user)) {
             let token = Connector.CreateToken(user.login);
             response.cookie('Token', token, { expires: new Date(Date.now() + 600000) });
+            response.status(201);
+            response.send();
+        } else {
+            response.status(401);
+            response.send();
         }
     }
-    Signup(request: express.Request, response: express.Response): void {
+    async Signup(request: express.Request, response: express.Response): Promise<void> {
         let user = JsonHelpers.JsonReg2User(request.body);
-        if (!Connector.AddUser(user)) {
+        if (!user.isEmail && !user.isPhone) {
+            response.status(400);
+            response.send("incorrect login");
+            return;
+        }
+        if (await Connector.AddUser(user)) {
             let token = Connector.CreateToken(user.login);
             response.cookie('Token', token, { expires: new Date(Date.now() + 600000) });
+            response.status(201)
+            response.send();
+        } else {
+            response.status(400);
+            response.send();
         }
+
     }
-    Info(request: express.Request, response: express.Response): void {
-        if (Connector.AuthValidate(request.cookies.Token as string)) {
-            response.send({ login: Connector.GetTokenInfo(request.cookies.Token as string).Owner });
+    async Info(request: express.Request, response: express.Response): Promise<void> {
+        if (Connector.AuthValidate(MainController.parseCookies(request).Token)) {
+            var own = await Connector.GetTokenInfo(MainController.parseCookies(request).Token);
+            response.cookie('Token', MainController.parseCookies(request).Token, { expires: new Date(Date.now() + 600000) });
+            response.send({
+                login: own.Owner
+            });
+
+        } else {
+            response.status(401);
+            response.send();
         }
     }
     Latency(request: express.Request, response: express.Response): void {
-        if (Connector.AuthValidate(request.cookies.Token as string)) {
+        if (Connector.AuthValidate(MainController.parseCookies(request).Token)) {
             ping.sys.probe(host, function (isAlive) {
+                response.cookie('Token', MainController.parseCookies(request).Token, { expires: new Date(Date.now() + 600000) });
                 var msg = isAlive ? 'host ' + host + ' is alive' : 'host ' + host + ' is dead';
                 response.send({ ping: msg });
             });
+        } else {
+            response.status(401);
+            response.send();
         }
 
     }
 
-    Logout(request: express.Request, response: express.Response, next: express.NextFunction): void {
-        if (Connector.AuthValidate(request.cookies.Token as string)) {
-            Connector.DeleteUserToken(JsonHelpers.Url2QueryParams(request.baseUrl),
-                Connector.GetTokenInfo(request.cookies.Token as string));
+    async Logout(request: express.Request, response: express.Response, next: express.NextFunction): Promise<void> {
+        if (Connector.AuthValidate(MainController.parseCookies(request).Token)) {
+            Connector.DeleteUserToken(JSON.parse(request.query.all),
+                await Connector.GetTokenInfo(MainController.parseCookies(request).Token));
+            response.status(201);
+            response.send();
+        } else {
+            response.status(400);
+            response.send();
         }
     }
 }

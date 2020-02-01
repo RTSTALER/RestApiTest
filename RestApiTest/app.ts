@@ -1,7 +1,7 @@
 import * as express from 'express';
 import MainController from './Controllers/MainController';
 import { MongoHelper as MongoHelper1 } from "./Workers/MongoHelper";
-import { Connector } from "./Workers/connector";
+import  Connector from "./Workers/connector";
 var bodyParser = require('body-parser')
 
 class App {
@@ -28,6 +28,12 @@ class App {
 
     public async listen() {
         this.app.listen(this.port, async () => {
+            try {
+                await Connector.Connect(
+                    "mongodb+srv://root:12345@cluster0-gc9nu.gcp.mongodb.net/users?retryWrites=true&w=majority");
+            } catch (err) {
+                console.log("ERROR!! - "+ err);
+            }  
             console.log(`App listening on the port ${this.port}`);
         });
     }

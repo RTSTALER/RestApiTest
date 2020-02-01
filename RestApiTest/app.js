@@ -11,6 +11,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
 const MainController_1 = require("./Controllers/MainController");
+const connector_1 = require("./Workers/connector");
 var bodyParser = require('body-parser');
 class App {
     constructor(port, _router) {
@@ -34,6 +35,12 @@ class App {
     listen() {
         return __awaiter(this, void 0, void 0, function* () {
             this.app.listen(this.port, () => __awaiter(this, void 0, void 0, function* () {
+                try {
+                    yield connector_1.default.Connect("mongodb+srv://root:12345@cluster0-gc9nu.gcp.mongodb.net/users?retryWrites=true&w=majority");
+                }
+                catch (err) {
+                    console.log("ERROR!! - " + err);
+                }
                 console.log(`App listening on the port ${this.port}`);
             }));
         });

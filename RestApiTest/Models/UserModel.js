@@ -12,11 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const class_validator_1 = require("class-validator");
 const typeorm_1 = require("typeorm");
 let DbUser = class DbUser {
-    constructor(_login, password) {
+    constructor(_login, password, _isEmail, _isPhone) {
         this.isEmail = false;
         this.isPhone = false;
         this.login = _login;
         this._password = password;
+        this.isPhone = _isPhone;
+        this.isEmail = _isEmail;
     }
 };
 __decorate([
@@ -40,7 +42,7 @@ __decorate([
 ], DbUser.prototype, "isPhone", void 0);
 DbUser = __decorate([
     typeorm_1.Entity(),
-    __metadata("design:paramtypes", [String, String])
+    __metadata("design:paramtypes", [String, String, Boolean, Boolean])
 ], DbUser);
 exports.DbUser = DbUser;
 //# sourceMappingURL=UserModel.js.map

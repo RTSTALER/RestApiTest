@@ -1,5 +1,7 @@
 import { DbUser } from "../Models/UserModel";
 import { RegisterUser } from "../Entities/RegisterUser";
+const validatePhoneNumber = require('validate-phone-number-node-js');
+const validator = require("email-validator");
 
 class JsonHelpers {
     public static JsonReg2User(_json: any): DbUser {
@@ -11,7 +13,7 @@ class JsonHelpers {
     }
 
     public static RgisterUser2dbUser(_user: RegisterUser): DbUser {
-        return new DbUser(_user.login, _user.password);
+        return new DbUser(_user.login, _user.password, validator.validate(_user.login), validatePhoneNumber.validate(_user.login));
     }
 
     public static Url2QueryParams(Url: string): boolean {
