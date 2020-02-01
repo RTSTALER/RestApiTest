@@ -21,6 +21,7 @@ class App {
         this.initMidleWare();
         this.Maincontroller = new MainController_1.default(this.router);
         this.initRouter();
+        this.SettingCORS();
     }
     ;
     initRouter() {
@@ -30,6 +31,17 @@ class App {
         return __awaiter(this, void 0, void 0, function* () {
             this.app.use(bodyParser.urlencoded({ extended: false }));
             this.app.use(bodyParser.json());
+        });
+    }
+    SettingCORS() {
+        this.app.use((req, res, next) => {
+            res.header('Access-Control-Allow-Origin', '*');
+            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            next();
+            this.app.options('*', (req, res) => {
+                res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
+                res.send();
+            });
         });
     }
     listen() {
