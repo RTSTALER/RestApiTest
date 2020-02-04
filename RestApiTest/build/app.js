@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
 const MainController_1 = require("./Controllers/MainController");
 const connector_1 = require("./Workers/connector");
+const config = require('dotenv').config();
 var bodyParser = require('body-parser');
 class App {
     constructor(port, _router) {
@@ -23,7 +24,6 @@ class App {
         this.initRouter();
         this.SettingCORS();
     }
-    ;
     initRouter() {
         this.app.use('/', this.router);
     }
@@ -36,7 +36,7 @@ class App {
     SettingCORS() {
         this.app.use((req, res, next) => {
             res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Set-Cookie, *');
             next();
             this.app.options('*', (req, res) => {
                 res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
@@ -48,7 +48,7 @@ class App {
         return __awaiter(this, void 0, void 0, function* () {
             this.app.listen(this.port, () => __awaiter(this, void 0, void 0, function* () {
                 try {
-                    yield connector_1.default.Connect("mongodb+srv://root:12345@cluster0-gc9nu.gcp.mongodb.net/users?retryWrites=true&w=majority");
+                    yield connector_1.default.Connect(config.parsed.DB_HOST, config.parsed.DB_USER, config.parsed.DB_PASS);
                 }
                 catch (err) {
                     console.log("ERROR!! - " + err);

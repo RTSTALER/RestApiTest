@@ -1,7 +1,7 @@
 import * as express from 'express';
 import MainController from './Controllers/MainController';
-import { MongoHelper as MongoHelper1 } from "./Workers/MongoHelper";
-import  Connector from "./Workers/connector";
+import Connector from "./Workers/connector";
+const config = require('dotenv').config();
 var bodyParser = require('body-parser')
 
 class App {
@@ -29,7 +29,7 @@ class App {
     private SettingCORS() {
         this.app.use((req, res, next) => {
             res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Set-Cookie, *');
             next();
             this.app.options('*', (req, res) => {
                 res.header('Access-Control-Allow-Methods', 'GET, PATCH, PUT, POST, DELETE, OPTIONS');
@@ -42,7 +42,9 @@ class App {
         this.app.listen(this.port, async () => {
             try {
                 await Connector.Connect(
-                    "mongodb+srv://root:12345@cluster0-gc9nu.gcp.mongodb.net/users?retryWrites=true&w=majority");
+                    config.parsed.DB_HOST,
+                    config.parsed.DB_USER,
+                    config.parsed.DB_PASS);
             } catch (err) {
                 console.log("ERROR!! - "+ err);
             }  

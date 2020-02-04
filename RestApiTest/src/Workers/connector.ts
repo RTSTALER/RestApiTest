@@ -1,12 +1,12 @@
 import { DbUser } from "../Models/UserModel";
-import { Token } from "../Models/TokenModel";
-import { MongoHelper } from "./MongoHelper";
+import { Token } from "../../Models/TokenModel";
+import { MongoHelper } from "../../Workers/MongoHelper";
 import * as mongo from 'mongodb';
+require('dotenv').config()
 
 const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator();
-
-export class Connector {
+class Connector {
     constructor() {
         this.Connect = this.Connect.bind(this);
         this.AddUser = this.AddUser.bind(this);
@@ -19,23 +19,22 @@ export class Connector {
         this.GetTokenInfo = this.GetTokenInfo.bind(this);
     }
 
-     public Connect(url: string): Promise<any> {
-         return new Promise<any>((resolve, reject) => {
-             const mongo = require('mongodb').MongoClient;
-             mongo.connect(url, { useUnifiedTopology: true }, (err, client: mongo.MongoClient) => {
-                 if (err) {
-                     console.log("ERROR -" + err)
-                     reject(err);
-                 } else {
-                     Connector.client = client;
-                     Connector.users = client.db('db_users').collection('users');
-                     Connector.tokens = client.db('db_tokens').collection('tokens');
-                     console.log("Connected to MongoDB")
-                     resolve(client);
-                 }
-             });
-         });
-     }
+    public Connect(host, username, password): void {
+
+        const mongo = require('mongodb').MongoClient;
+        mongo.connect("mongodb+srv://" + username + ":" + password + "@" + host + "/users?retryWrites=true&w=majority",
+            { useUnifiedTopology: true },
+            (err, client: mongo.MongoClient) => {
+                if (err) {
+                    console.log("ERROR -" + err)
+                } else {
+                    Connector.client = client;
+                    Connector.users = client.db('db_users').collection('users');
+                    Connector.tokens = client.db('db_tokens').collection('tokens');
+                    console.log("Connected to MongoDB")
+                }
+            });
+    }
 
     public static client: mongo.MongoClient;
     public static tokens;

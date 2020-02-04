@@ -1,7 +1,7 @@
 import * as express from 'express';
 import JsonHelpers from '../Helpers/JsonHelper';
 import Connector from '../Workers/connector';
-import { Token } from "../Models/TokenModel";
+import { Token } from "../../Models/TokenModel";
 
 var ping = require('ping');
 const host = "google.com";

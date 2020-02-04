@@ -1,4 +1,3 @@
-import { Column } from 'typeorm';
 
 export class Token {
 
@@ -9,13 +8,10 @@ export class Token {
 
     }
     //Логин владельца токена
-    @Column()
     Owner: string;
 
-    @Column()
     token: string;
 
-    @Column()
     CreateTime: number;
 
 }

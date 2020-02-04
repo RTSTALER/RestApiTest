@@ -9,7 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const TokenModel_1 = require("../Models/TokenModel");
+const TokenModel_1 = require("../../Models/TokenModel");
+require('dotenv').config();
 const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator();
 class Connector {
@@ -24,22 +25,18 @@ class Connector {
         this.LogIn = this.LogIn.bind(this);
         this.GetTokenInfo = this.GetTokenInfo.bind(this);
     }
-    Connect(url) {
-        return new Promise((resolve, reject) => {
-            const mongo = require('mongodb').MongoClient;
-            mongo.connect(url, { useUnifiedTopology: true }, (err, client) => {
-                if (err) {
-                    console.log("ERROR -" + err);
-                    reject(err);
-                }
-                else {
-                    Connector.client = client;
-                    Connector.users = client.db('db_users').collection('users');
-                    Connector.tokens = client.db('db_tokens').collection('tokens');
-                    console.log("Connected to MongoDB");
-                    resolve(client);
-                }
-            });
+    Connect(host, username, password) {
+        const mongo = require('mongodb').MongoClient;
+        mongo.connect("mongodb+srv://" + username + ":" + password + "@" + host + "/users?retryWrites=true&w=majority", { useUnifiedTopology: true }, (err, client) => {
+            if (err) {
+                console.log("ERROR -" + err);
+            }
+            else {
+                Connector.client = client;
+                Connector.users = client.db('db_users').collection('users');
+                Connector.tokens = client.db('db_tokens').collection('tokens');
+                console.log("Connected to MongoDB");
+            }
         });
     }
     AddUser(_user) {
@@ -116,6 +113,5 @@ class Connector {
         });
     }
 }
-exports.Connector = Connector;
 exports.default = new Connector();
 //# sourceMappingURL=connector.js.map

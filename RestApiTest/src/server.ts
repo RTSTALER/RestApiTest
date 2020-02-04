@@ -1,5 +1,4 @@
 import App from './app';
-import { MongoHelper } from "./Workers/MongoHelper";
 import MainController from './Controllers/MainController';
 import e = require('express');
 
