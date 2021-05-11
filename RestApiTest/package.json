@@ -22,7 +22,7 @@
     "express": "^4.14.0",
     "mongodb": "^3.5.2",
     "ping": "^0.2.2",
-    "pug": "^2.0.0-rc.3",
+    "pug": "^3.0.1",
     "reflect-metadata": "^0.1.13",
     "routing-controllers": "^0.8.0",
     "typeorm": "^0.2.25",
